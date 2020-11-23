@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h> //for string cmps and sizes
 #include <time.h> //for converting date to epoch time
+#include "merge_sort.c" //for sorting records
 #define DB "runningData.csv" //database name
 /*exception handling using perror() library function*/
 #define TRY(a)  if (!(a)) {perror(#a);exit(1);} 
@@ -37,15 +38,13 @@ enum {CREATE, REMOVE, DISPLAY_SORT, SHOW_LATEST, CLEAR};
 /*func prototypes*/
 int readDB(FILE *f); //func to read db
 int writeDB(FILE *f); //func to write to db
-static void toEpochTime(int idx); //func to convert from human-readable to epoch file
+static void toEpochTime(int numOfEntries); //func to convert from human-readable to epoch file
 static int check_date(char *c); //func to validate date entered via terminal
-static void mergeSort(int arry[], int left, int right); //func to sort entries
-static void merge(int arry[], int left, int middle, int right); //helping method for mergeSort
 static void printArray(int arry[], int size); // <---DELETE LATER
 
 /*static vars*/
 static char newDistance[25], newTime[25], newDate[25]; //temp vars to scan to
-static int idx = 0; //index of struct
+static int numOfEntries = 0; //index of struct
 static int rc;	//return code
 static char flag = 'c'; // flag to continue
 static char line[MAX_LINE_LEN]; // string to hold line number
@@ -84,7 +83,7 @@ int main(int argc, char **argv) {
 			do {
 				//get values from the keyboard
 				printf("\nCreate an entry:\n");
-				/*
+				/* debug mode, not taking time/distance
 				printf("Enter a distance in mi:\n");
 				scanf("%s", &newDistance);
 				printf("Enter a time in min:\n");
@@ -97,14 +96,14 @@ int main(int argc, char **argv) {
 				if (check_date(newDate)) {
 					//set struct values if date is valid
 					/*debug mode, not taking time/distance
-	    			myData[idx].distance = atof(newDistance);
-	    			myData[idx].timeInMinutes = atof(newTime);
+	    			myData[numOfEntries].distance = atof(newDistance);
+	    			myData[numOfEntries].timeInMinutes = atof(newTime);
 	    			*/
-					myData[idx].distance = 1;
-	    			myData[idx].timeInMinutes = 1;
-	    			strcpy(myData[idx].date, newDate);
-	    			toEpochTime(idx);
-	    			idx++;	//goto next struct index
+					myData[numOfEntries].distance = 1;
+	    			myData[numOfEntries].timeInMinutes = 1;
+	    			strcpy(myData[numOfEntries].date, newDate);
+	    			toEpochTime(numOfEntries);
+	    			numOfEntries++;	//goto next struct index
 				} else {
 					printf("not a valid date!\n");
 					printf("enter a date in the form 'mm/dd/yyyy'\n");
@@ -140,7 +139,7 @@ int main(int argc, char **argv) {
 			printf("WARNING: all entries in the database will be deleted\n");
 			printf("press 'c' to continue:\n");
 			scanf("%c", &flag);
-			idx = 0;	//set the index of the struct to zero so no entries are written
+			numOfEntries = 0;	//set the index of the struct to zero so no entries are written
 		break;
 		
 		//defaults to an error message
@@ -153,16 +152,16 @@ int main(int argc, char **argv) {
 	f = fopen(DB, "w");
 	
 	//create an array of epoch dates for sorting
-	int epoch_list[idx];
-	for (i =0; i < idx; i++) {
+	int epoch_list[numOfEntries];
+	for (i =0; i < numOfEntries; i++) {
 		epoch_list[i] = myData[i].edate;
 	}
 	
-	mergeSort(epoch_list, 0, idx-1);
+	mergeSort(epoch_list, 0, numOfEntries-1);
 
 	//copy myData values to sortedData based on epoch_list order
-	for (i =0; i < idx; i++) {
-		for (j =0; j < idx; j++) {
+	for (i =0; i < numOfEntries; i++) {
+		for (j =0; j < numOfEntries; j++) {
 			if (epoch_list[i] == myData[j].edate) {
 				sortedData[i].edate = myData[j].edate;
 				sortedData[i].distance = myData[j].distance;
@@ -172,7 +171,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	//copy sorted struct back into original struct
-	for (i =0; i < idx; i++) {
+	for (i =0; i < numOfEntries; i++) {
 		 myData[i].edate = sortedData[i].edate;
 		 myData[i].distance = sortedData[i].distance;
 		 myData[i].timeInMinutes = sortedData[i].timeInMinutes;
@@ -194,65 +193,12 @@ static void printArray(int arry[], int size) {
 	printf("\n");
 }
 
-/*function to sort an array using merge sort*/
-static void mergeSort(int arry[], int left, int right) {
-	if (left < right) {
-		//equivalent to (left+right)/2 but avoids overflow
-		int middle = left + (right - left) / 2; 
-		
-		//sort first and second halves
-		mergeSort(arry, left, middle);
-		mergeSort(arry, middle + 1, right);
-
-		//merge the two halves
-		//merge(arry, left, middle, right);
-		int i,j,k;	//indexes for right, left, and middle
-		int size_left = middle - left + 1; //left partition size
-		int size_right = right - middle;	//right partition size
-		//temp arrays
-		int L[size_left], R[size_right];
-		//copy new data into left and right arrays (L[] and R[])
-		for (i =0; i < size_left; i++) {
-			L[i] = arry[left + i]; 
-		}
-		for (j =0; j < size_right; j++) {
-			R[j] = arry[middle + 1 + j];
-		}
-		//merge right and left arrays back into arry[]
-		i =0;
-		j =0;
-		k =left;
-		while (i < size_left && j < size_right) {
-			if (L[i] <= R[j]) {
-				arry[k] = L[i];
-				i++;
-			}
-			else {
-				arry[k] = R[j];
-				j++;
-			}
-			k++;
-		}
-		//copy any remaining elements of either the right or left arrays
-		while (i < size_left) {
-			arry[k] = L[i];
-			i++;
-			k++;
-		}
-		while (j < size_right) {
-			arry[k] = R[j];
-			j++;
-			k++;
-		}
-	}
-}
-
 /*method to convert from human-readable to epoch time
   step 1: parse mm/dd/yyyy into month, day, and year
   step 2: set equal to struct tm variables (i.e.)
   step 3: copy tm struct values back into myData[].date[]
 */
-static void toEpochTime (int idx) {
+static void toEpochTime (int numOfEntries) {
 	struct tm t;
 	int i;
 	int rc;
@@ -260,7 +206,7 @@ static void toEpochTime (int idx) {
 	char tmp_date[40];
 	int year, month, day;
 
-	strcpy(tmp_date, myData[idx].date);
+	strcpy(tmp_date, myData[numOfEntries].date);
    
 	//for loop to iterate through pointer to DataRec struct created in main
 	for (i=0; i < strlen(tmp_date); i++) {
@@ -273,7 +219,7 @@ static void toEpochTime (int idx) {
 	t.tm_year = year - 1900;
 	t.tm_mon = month -1;
 	t.tm_mday = day;
-	myData[idx].edate = mktime(&t); //set epoch	
+	myData[numOfEntries].edate = mktime(&t); //set epoch	
 }
 
 /*function to check for a valid date*/
@@ -285,7 +231,7 @@ int check_date (char *date) {
 int writeDB(FILE *f) {
 	int i;
 	fprintf(f, "_Distance_,_Time_,_Date_\n");	//column headers
-	for (i = 0; i < idx; i++) {
+	for (i = 0; i < numOfEntries; i++) {
 		fprintf(f,"%f,%f,%s,%d\n",myData[i].distance,myData[i].timeInMinutes,
 			                      myData[i].date, myData[i].edate);
 	}
@@ -307,11 +253,11 @@ int readDB(FILE *f) {
     		//set i equal return value of sscanf (which will be no. of vars filled)
     		rc = sscanf(line, "%s %s %s", &newDistance, &newTime, &newDate);
     		if (rc == 3) {
-    			myData[idx].distance = atof(newDistance);
-    			myData[idx].timeInMinutes = atof(newTime);
-    			strcpy(myData[idx].date, newDate);
-    			toEpochTime(idx);
-    		   idx++;
+    			myData[numOfEntries].distance = atof(newDistance);
+    			myData[numOfEntries].timeInMinutes = atof(newTime);
+    			strcpy(myData[numOfEntries].date, newDate);
+    			toEpochTime(numOfEntries);
+    		   numOfEntries++;
     		}   
     	}	
     }
