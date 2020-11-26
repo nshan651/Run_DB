@@ -7,40 +7,20 @@
 #include <stdlib.h>
 #include <string.h> //for string cmps and sizes
 #include <time.h> //for converting date to epoch time
-#include "merge_sort.c" //for sorting records
-#define DB "runningData.csv" //database name
-/*exception handling using perror() library function*/
-#define TRY(a)  if (!(a)) {perror(#a);exit(1);} 
-#define TRY2(a) if((a)<0) {perror(#a);exit(1);}
-/*max number of entries in the db and max line length to read*/
-#define MAX_ELEMENTS 10000 
-#define MAX_LINE_LEN 250   
-/*define boolean values*/
-#define TRUE 1
-#define FALSE 0
-typedef unsigned char BOOL;
-
-/*struct to contain each data record*/
-struct DataRec {
-	float distance;		
-	float timeInMinutes;
-	char date[25];
-	time_t edate;
-};
+#include <math.h> //for floor() function used in binary search
+#include "rundb.h"
 
 /*create an array of structs*/
 struct DataRec myData[MAX_ELEMENTS];
-struct DataRec sortedData[MAX_ELEMENTS];
 
 /*enum for list of actions to take*/
 enum {CREATE, REMOVE, DISPLAY_SORT, SHOW_LATEST, CLEAR};
 
-/*func prototypes*/
-int readDB(FILE *f); //func to read db
-int writeDB(FILE *f); //func to write to db
+/*static function prototypes*/
 static void toEpochTime(int numOfEntries); //func to convert from human-readable to epoch file
 static int check_date(char *c); //func to validate date entered via terminal
 static void printArray(int arry[], int size); // <---DELETE LATER
+static void printDB(FILE *f);
 
 /*static vars*/
 static char newDistance[25], newTime[25], newDate[25]; //temp vars to scan to
@@ -52,6 +32,7 @@ static char line[MAX_LINE_LEN]; // string to hold line number
 /*main*/
 int main(int argc, char **argv) {
 	int i, j;
+	char mode[10];
 	//list of commands accepted by the command line
 	const char *cmds[] = {"-create", "-remove", "-display_sort", "-show_latest", "-clear", NULL}; 
 	
@@ -83,24 +64,18 @@ int main(int argc, char **argv) {
 			do {
 				//get values from the keyboard
 				printf("\nCreate an entry:\n");
-				/* debug mode, not taking time/distance
 				printf("Enter a distance in mi:\n");
 				scanf("%s", &newDistance);
 				printf("Enter a time in min:\n");
 				scanf("%s", &newTime);
-				*/
 				printf("Enter a date:\n");
 				scanf("%s", &newDate);
 				
 				//validation
 				if (check_date(newDate)) {
 					//set struct values if date is valid
-					/*debug mode, not taking time/distance
 	    			myData[numOfEntries].distance = atof(newDistance);
 	    			myData[numOfEntries].timeInMinutes = atof(newTime);
-	    			*/
-					myData[numOfEntries].distance = 1;
-	    			myData[numOfEntries].timeInMinutes = 1;
 	    			strcpy(myData[numOfEntries].date, newDate);
 	    			toEpochTime(numOfEntries);
 	    			numOfEntries++;	//goto next struct index
@@ -124,7 +99,13 @@ int main(int argc, char **argv) {
 		//sort by distance and output to terminal
 		case DISPLAY_SORT:
 			printf("Display sorted entries\n");
-			printf("oops, nothing here :(\n");
+			printf("Choose how columns are sorted");
+			printf("[Column_name] [ascending_or_descending]\n");
+			scanf("%s", &mode);
+			mergeSort(0, numOfEntries-1, mode);
+			TRY(f = fopen(DB, "r"));
+			printDB(f); //print to terminal
+			fclose(f);
 		break;
 
 		//show most recent entry
@@ -150,35 +131,9 @@ int main(int argc, char **argv) {
 
 	//open file to write
 	f = fopen(DB, "w");
-	
-	//create an array of epoch dates for sorting
-	int epoch_list[numOfEntries];
-	for (i =0; i < numOfEntries; i++) {
-		epoch_list[i] = myData[i].edate;
-	}
-	
-	mergeSort(epoch_list, 0, numOfEntries-1);
-
-	//copy myData values to sortedData based on epoch_list order
-	for (i =0; i < numOfEntries; i++) {
-		for (j =0; j < numOfEntries; j++) {
-			if (epoch_list[i] == myData[j].edate) {
-				sortedData[i].edate = myData[j].edate;
-				sortedData[i].distance = myData[j].distance;
-				sortedData[i].timeInMinutes = myData[j].timeInMinutes;
-				strcpy(sortedData[i].date, myData[j].date);
-			}
-		}
-	}
-	//copy sorted struct back into original struct
-	for (i =0; i < numOfEntries; i++) {
-		 myData[i].edate = sortedData[i].edate;
-		 myData[i].distance = sortedData[i].distance;
-		 myData[i].timeInMinutes = sortedData[i].timeInMinutes;
-		 strcpy(myData[i].date, sortedData[i].date);
-	}
-
-	//write myData values to excel
+	//perform merge sort, default way to store data
+	mergeSort(0, numOfEntries-1, "date/d");
+	//write myData values to csv
 	writeDB(f);
 	fclose(f);
 
@@ -223,9 +178,29 @@ static void toEpochTime (int numOfEntries) {
 }
 
 /*function to check for a valid date*/
-int check_date (char *date) {
+static int check_date (char *date) {
 	return ((date[2] == '/') && (date[5] == '/') && (strlen(date) == 10));
 }
+
+static void printDB(FILE *f) {
+	int i,j;
+	printf("\n Distance(mi)  Time(min)      Date\n");
+	printf("+------------+----------+---------------+\n");
+	for (i =0; i < numOfEntries; i++) {
+    	if (line[0] != '_') {
+    		//replace commas with empty space
+    		if (line[i] == ',') {
+    				line[i] = ' ';
+    		}
+    		else {
+    			printf("    %.2f        %.2f        %s\n",myData[i].distance,myData[i].timeInMinutes,
+			                      myData[i].date);
+    		}	
+    	}
+    }
+	
+}
+
 
 /*function to write to db*/
 int writeDB(FILE *f) {
