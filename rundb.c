@@ -8,10 +8,12 @@
 #include <string.h> //for string cmps and sizes
 #include <time.h> //for converting date to epoch time
 #include <math.h> //for floor() function used in binary search
-#include "rundb.h"
-
-/*create an array of structs*/
-struct DataRec myData[MAX_ELEMENTS];
+/*DEFINE_DATA creates an external storage class that 
+*initializes global struct; global struct located in rundb.d 
+*data file
+*/
+#define DEFINE_DATA
+#include "rundb.d"
 
 /*enum for list of actions to take*/
 enum {CREATE, REMOVE, DISPLAY_SORT, SHOW_LATEST, CLEAR};
@@ -26,8 +28,8 @@ static void printDB(FILE *f);
 static char newDistance[25], newTime[25], newDate[25]; //temp vars to scan to
 static int numOfEntries = 0; //index of struct
 static int rc;	//return code
-static char flag = 'c'; // flag to continue
-static char line[MAX_LINE_LEN]; // string to hold line number
+static char flag = 'c'; //flag to continue
+static char line[MAX_LINE_LEN]; //string to hold line number
 
 /*main*/
 int main(int argc, char **argv) {
@@ -100,7 +102,7 @@ int main(int argc, char **argv) {
 		case DISPLAY_SORT:
 			printf("Display sorted entries\n");
 			printf("Choose how columns are sorted");
-			printf("[Column_name] [ascending_or_descending]\n");
+			printf("[Column_name]/[a or d]\n");
 			scanf("%s", &mode);
 			mergeSort(0, numOfEntries-1, mode);
 			TRY(f = fopen(DB, "r"));
@@ -128,7 +130,7 @@ int main(int argc, char **argv) {
 			printf("\nUnknown command\n");
 			goto usage;
 	} //end switch
-
+	
 	//open file to write
 	f = fopen(DB, "w");
 	//perform merge sort, default way to store data
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
 
 } //end main
 
-/*TEST METHOD function to print an array - DELETE LATER*/
+/*TEST function to print an array - DELETE LATER*/
 static void printArray(int arry[], int size) {
 	int i;
 	for (i =0; i < size; i++) {
@@ -171,7 +173,7 @@ static void toEpochTime (int numOfEntries) {
 	sscanf(tmp_date, "%d %d %d", &month, &day, &year);
 
     memset(&t, 0, sizeof(t)); //set struct tm variables to 0
-	t.tm_year = year - 1900;
+	t.tm_year = year -1900;
 	t.tm_mon = month -1;
 	t.tm_mday = day;
 	myData[numOfEntries].edate = mktime(&t); //set epoch	

@@ -10,7 +10,17 @@
 /*define boolean values*/
 #define TRUE 1
 #define FALSE 0
+/*DEFINE_DATA def referencing rundb.d to intialize global struct 
+*with STORAGE_CLASS name
+*/
+#ifdef DEFINE_DATA
+#define STORAGE_CLASS
+#else
+#define STORAGE_CLASS extern
+#endif
+/*typedefs*/
 typedef unsigned char BOOL;
+
 
 /*global function prototypes*/
 int readDB(FILE *f); //func to read db

@@ -6,13 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rundb.h"
+#include "rundb.d"
 
-extern struct DataRec myData[];
+/*func prototype*/
+static int mode_type(char *mode, int i, int j, struct DataRec *L, struct DataRec *R);
 
 /*function to perform merge sort on an array*/
 void mergeSort(int left, int right, char *mode) {	//(*myData)[] is a pointer
-	int condition;
+
 	if (left < right) {												//to global struct array
 		//equivalent to (left+right)/2 but avoids overflow
 		int middle = left + (right - left) / 2; 
@@ -39,34 +40,12 @@ void mergeSort(int left, int right, char *mode) {	//(*myData)[] is a pointer
 		i =0;
 		j =0;
 		k =left;
-		//set mode to sort by
-		if (strcmp(mode, "date/a")) {
-		condition = (L[i].edate >= R[j].edate); 
-		} 
-		else if (strcmp(mode, "date/d")) {
-			condition = (L[i].edate <= R[j].edate); 
-		}
-		else if (strcmp(mode, "mileage/a")) {
-			condition = (L[i].distance >= R[j].distance); 
-		}
-		else if (strcmp(mode, "mileage/d")) {
-			condition = (L[i].distance <= R[j].distance); 
-		}
-		else if (strcmp(mode, "time/a")) {
-			condition = (L[i].timeInMinutes >= R[j].timeInMinutes); 
-			printf("ascending");
-		}
-		else if (strcmp(mode, "time/d")) {
-			condition = (L[i].timeInMinutes <= R[j].timeInMinutes); 
-			printf("descending");
-		}
-		else {
-			printf("ERROR: not a valid condition");
-			exit(0);
-		}
+		
 		//merge the left and right struct arrays
 		while (i < size_left && j < size_right) {
-			if (condition) {
+
+			//begin the merge
+			if (mode_type(mode, i, j, L, R)) {
 				myData[k] = L[i];
 				i++;
 			}
@@ -74,8 +53,9 @@ void mergeSort(int left, int right, char *mode) {	//(*myData)[] is a pointer
 				myData[k] = R[j];
 				j++;
 			}
-			k++;
+			k++;			
 		}
+
 		//copy any remaining elements of either the right or left arrays
 		while (i < size_left) {
 			myData[k] = L[i];
@@ -89,6 +69,42 @@ void mergeSort(int left, int right, char *mode) {	//(*myData)[] is a pointer
 		}
 	}
 }
+
+/*static function that determines how to sort struct array*/
+static int mode_type(char *mode, int i, int j, struct DataRec *L, struct DataRec *R) {
+	int condition;
+	/*conditonal comparisons*/
+			if (strcmp(mode, "distance/d") == 0) {
+				condition = L[i].distance >= R[j].distance;
+
+			}
+			else if (strcmp(mode, "distance/a") == 0) {
+				condition = L[i].distance <= R[j].distance;
+
+			}
+			else if (strcmp(mode, "time/d") == 0) {
+				condition = L[i].timeInMinutes >= R[j].timeInMinutes;
+
+			}
+			else if (strcmp(mode, "time/a") == 0) {
+				condition = L[i].timeInMinutes <= R[j].timeInMinutes;
+
+			}
+			else if (strcmp(mode, "date/d") == 0) {
+				condition = L[i].edate >= R[j].edate;
+
+			}
+			else if (strcmp(mode, "date/a") == 0) {
+				condition = L[i].edate <= R[j].edate; 
+			}
+			else {
+				printf("FATAL ERROR");
+				exit(0);
+			}
+		return condition;
+}
+
+
 
 /*
 //test driver
