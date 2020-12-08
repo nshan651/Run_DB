@@ -16,7 +16,6 @@ void structToEpochTime (int num) {
 	struct tm t;
 	int i;
 	int rc;
-
 	char tmp_date[40];
 	int year, month, day;
 
@@ -25,10 +24,9 @@ void structToEpochTime (int num) {
 	//for loop to iterate through pointer to DataRec struct created in main
 	for (i=0; i < strlen(tmp_date); i++) {
       if (tmp_date[i] == '/')
-        tmp_date[i] = ' ';
+        	tmp_date[i] = ' ';
 	}
 	sscanf(tmp_date, "%d %d %d", &month, &day, &year);
-
     memset(&t, 0, sizeof(t)); //set struct tm variables to 0
 	t.tm_year = year -1900;
 	t.tm_mon = month -1;
@@ -41,19 +39,14 @@ int stringToEpochTime (char *my_date) {
 	struct tm t;
 	int i;
 	int rc;
-
-	//char tmp_date[40];
 	int year, month, day;
-
-	//strcpy(tmp_date, my_date);
    
 	//for loop to iterate through pointer to DataRec struct created in main
 	for (i=0; i < strlen(my_date); i++) {
       if (my_date[i] == '/')
-        my_date[i] = ' ';
+        	my_date[i] = ' ';
 	}
 	sscanf(my_date, "%d %d %d", &month, &day, &year);
-
     memset(&t, 0, sizeof(t)); //set struct tm variables to 0
 	t.tm_year = year -1900;
 	t.tm_mon = month -1;

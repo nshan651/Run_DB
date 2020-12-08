@@ -103,28 +103,3 @@ static int mode_type(char *mode, int i, int j, struct DataRec *L, struct DataRec
 			}
 		return condition;
 }
-
-
-
-/*
-//test driver
-int main(int argc, char **argv) {
-	int test_array[] = {12, 11, 13, 5, 7, 9, 20};
-	int size = sizeof(test_array) / sizeof(test_array[0]); // divide by one element to normalize bytes
-
-	printf("intial array is\n");
-	//printArray(test_array, size);
-
-	//parameters: {array to sort}, {start}, {end}
-	//mergeSort(0, size-1);
-
-	printf("sorted array is\n");
-	//printArray(test_array, size);
-
-	return 0;
-}
-*/
-
-
-
-

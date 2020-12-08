@@ -21,15 +21,17 @@
 /*typedefs*/
 typedef unsigned char BOOL;
 
-
 /*global function prototypes*/
+void mergeSort(int left, int right, char *mode);
+void structToEpochTime (int num);
 int readDB(FILE *f); //func to read db
 int writeDB(FILE *f); //func to write to db
+
+void searchDB(char *date, int n, int *buf);
+//void searchDB(char *date, int n, int *buf); //func to search db
+
 int check_date(char *c); //func to validate date entered via terminal
-void mergeSort(int left, int right, char *mode);
 int stringToEpochTime (char *my_date);
-void structToEpochTime (int num);
-int searchDB(char *date, int n);
 
 /*struct to contain each data record*/
 struct DataRec {

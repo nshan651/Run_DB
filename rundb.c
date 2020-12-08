@@ -16,30 +16,30 @@
 #include "rundb.d"
 
 /*enum for list of actions to take*/
-enum {CREATE, REMOVE, DISPLAY_SORT, SHOW_LATEST, CLEAR};
+enum {CREATE, REMOVE, DISPLAY_SORT, SEARCH, CLEAR};
 
 /*static function prototypes*/
-//static void structToEpochTime(int numOfEntries); //func to convert from human-readable to epoch file
 static void printArray(int arry[], int size); // <---DELETE LATER
 static void displayDB(FILE *f);
-//static int stringToEpochTime (char *my_date);
 
 /*static vars*/
 static char newDistance[25], newTime[25], newDate[25]; //temp vars to scan to
+static char mode[10]; //temp char to hold sorting mode
 static int numOfEntries = 0; //index of struct
-static int target_index; //used to get index of searched item
 static int rc;	//return code
 static char flag = 'c'; //flag to continue
 static char line[MAX_LINE_LEN]; //string to hold line number
+static int buf[MAX_ELEMENTS]; //buffer used to hold possible search matches
+static int *buf_ptr; //pointer to buf index
 
 /*main*/
 int main(int argc, char **argv) {
 	int i, j;
-	char mode[10];
-	//char target_date[10];
-	//int target;
+
+	buf_ptr = buf; //set buf pointer to the address of buf
+
 	//list of commands accepted by the command line
-	const char *cmds[] = {"-create", "-remove", "-display_sort", "-show_latest", "-clear", NULL}; 
+	const char *cmds[] = {"-create", "-remove", "-display_sort", "-search", "-clear", NULL}; 
 	
 	//open csv file to be read
 	FILE *f;
@@ -47,20 +47,18 @@ int main(int argc, char **argv) {
 	//Exception thrown with fewer than 2 command line args
 	if (argc < 2) {
 		usage: printf("Usage: %s [commands]\n"
-			"-create  Create one or more entries\n"
-			"-remove  Remove an entry\n"
-			"-display_sort  Display by a certain column\n"
-			"-show_latest  Show the most recent entry\n"
-			"-clear Clear the database", argv[0]);
+			"  -create  Create one or more entries\n"
+			"  -remove  Remove an entry\n"
+			"  -display_sort  Display by a certain column\n"
+			"  -search  Search for an entry by date\n"
+			"  -clears  the database\n", argv[0]);
 			fclose(f);
 			return 0; 
 	}
-
 	//function to read and copy db records to struct array
 	readDB(f);
 	mergeSort(0, numOfEntries-1, "date/d");
     fclose(f);
-
 	//cycle through each command
 	for (i =0; cmds[i] && strcmp(argv[1], cmds[i]); i++); 
 	//switch statement for each database operation
@@ -91,30 +89,44 @@ int main(int argc, char **argv) {
 				}
 				printf("Press 'c' to continue:\n");
 				scanf(" %c", &flag); //note that there MUST be a space before the %c specifier
-				system("cls"); //clear screen
-				
+				system("cls"); //clear screen			
 			} while(flag == 'c');
 		break;
 
-		//remove a specified entry
-		//note: broken for multiple entries with the same date 
+		//remove a specified entry 
 		case REMOVE:
 			do {
 				//get values from the keyboard
 				printf("Enter date of entry to be removed\n");
 				scanf("%s", &newDate);
-				target_index = searchDB(newDate, numOfEntries);
-				if (target_index >= 0) {
-					printf("Delete this entry?\n");
-					printf("Press 'd' to delete entry:\n");
-					scanf(" %c", &flag); 
-					if (flag == 'd') {
-						//overwrite the entry with the last entry in the db
-						//then subtract 1 from numOfEntries
-						myData[target_index] = myData[numOfEntries-1];
+				searchDB(newDate, numOfEntries, buf_ptr);
+				//printArray(buf, 10); //<-- debug
+
+				//allow user to choose which entry to remove (if multiple duplicates)
+				int remove = -1;
+				flag = 'c';
+				while ( (buf[remove] >= 0) && (flag == 'c') ) {
+					printf("Enter index of entry to be removed\n");
+					printf("Enter '-1' to return\n");
+					scanf("%d", &remove); 
+					if (remove >= 0) {
+						//overwrite the entry to be removed with the last entry
+						myData[buf[remove]] = myData[numOfEntries-1];
+						//subtract 1 from overall number of entries
 						numOfEntries--;
+						printf("Entry removed\n");
+					} 
+					else if (remove == -1) {
+						printf("Returning to main program\n");
+						break;
 					}
+					else {
+						printf("Not a valid index\n");
+					}
+					printf("press 'c' to remove another entry on this date\n");
+					scanf(" %c", &flag);
 				}
+				memset(buf,0,sizeof(buf)); //reset buffer array
 				printf("Press 'c' to continue:\n");
 				scanf(" %c", &flag); //note that there MUST be a space before the %c specifier
 				system("cls"); //clear screen
@@ -134,10 +146,17 @@ int main(int argc, char **argv) {
 			fclose(f);
 		break;
 
-		//show most recent entry
-		case SHOW_LATEST:
-			printf("Show most recent entry\n");
-			printf("oops, nothing here :(\n");
+		//search the database for a specific entry
+		case SEARCH:
+			do {
+				printf("Enter a date\n");
+				scanf("%s", &newDate);
+				searchDB(newDate, numOfEntries, buf_ptr); //perform a search 
+				memset(buf,0,sizeof(buf)); //reset buffer array
+				printf("Press 'c' to continue:\n");
+				scanf(" %c", &flag); //note that there MUST be a space before the %c specifier
+				system("cls"); //clear screen
+			} while(flag == 'c');
 		break;
 
 		//clears the entire database
