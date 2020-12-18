@@ -75,11 +75,11 @@ static int mode_type(char *mode, int i, int j, struct DataRec *L, struct DataRec
 	int condition;
 	/*conditonal comparisons*/
 			if (strcmp(mode, "distance/d") == 0) {
-				condition = L[i].distance >= R[j].distance;
+				condition = L[i].distanceInMiles >= R[j].distanceInMiles;
 
 			}
 			else if (strcmp(mode, "distance/a") == 0) {
-				condition = L[i].distance <= R[j].distance;
+				condition = L[i].distanceInMiles <= R[j].distanceInMiles;
 
 			}
 			else if (strcmp(mode, "time/d") == 0) {

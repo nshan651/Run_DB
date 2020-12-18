@@ -23,20 +23,30 @@ typedef unsigned char BOOL;
 
 /*global function prototypes*/
 void mergeSort(int left, int right, char *mode);
+void searchDB(char *date, int n, int *buf);
 void structToEpochTime (int num);
 int readDB(FILE *f); //func to read db
 int writeDB(FILE *f); //func to write to db
+float miles_per_hour(float distanceInMiles, float timeInMinutes);
+float kilometers_per_hour(float distanceInMiles, float timeInMinutes);
+float min_per_mile(float distanceInMiles, float timeInMinutes);
+float min_per_kilometer(float distanceInMiles, float timeInMinutes);
 
-void searchDB(char *date, int n, int *buf);
-//void searchDB(char *date, int n, int *buf); //func to search db
+
 
 int check_date(char *c); //func to validate date entered via terminal
 int stringToEpochTime (char *my_date);
 
 /*struct to contain each data record*/
 struct DataRec {
-	float distance;		
+	float distanceInMiles;		
 	float timeInMinutes;
 	char date[25];
 	time_t edate;
+	//derived values
+	float mph;
+	float kph;
+	float minutesPerMile;
+	float minutesPerKilometer;
+	
 };

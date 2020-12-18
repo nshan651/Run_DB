@@ -23,7 +23,7 @@ static void printArray(int arry[], int size); // <---DELETE LATER
 static void displayDB(FILE *f);
 
 /*static vars*/
-static char newDistance[25], newTime[25], newDate[25]; //temp vars to scan to
+static char newDistance[25], newTime[25], newDate[25], newMPH[25], newKPH[25]; //temp vars to scan to
 static char mode[10]; //temp char to hold sorting mode
 static int numOfEntries = 0; //index of struct
 static int rc;	//return code
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 				//validation
 				if (check_date(newDate)) {
 					//set struct values if date is valid
-	    			myData[numOfEntries].distance = atof(newDistance);
+	    			myData[numOfEntries].distanceInMiles = atof(newDistance);
 	    			myData[numOfEntries].timeInMinutes = atof(newTime);
 	    			strcpy(myData[numOfEntries].date, newDate);
 	    			structToEpochTime(numOfEntries);
@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 	//open file to write
 	f = fopen(DB, "w");
 	//perform merge sort, default way to store data
-	mergeSort(0, numOfEntries-1, "date/d");
+	mergeSort(0, numOfEntries-1, "date/a");
 	//write myData values to csv
 	writeDB(f);
 	fclose(f);
@@ -209,7 +209,7 @@ static void displayDB(FILE *f) {
     				line[i] = ' ';
     		}
     		else {
-    			printf("    %.2f        %.2f        %s\n",myData[i].distance,myData[i].timeInMinutes,
+    			printf("    %.2f        %.2f        %s\n",myData[i].distanceInMiles,myData[i].timeInMinutes,
 			                      myData[i].date);
     		}	
     	}
@@ -220,10 +220,12 @@ static void displayDB(FILE *f) {
 /*function to write to db*/
 int writeDB(FILE *f) {
 	int i;
-	fprintf(f, "_Distance_,_Time_,_Date_\n");	//column headers
+	fprintf(f, "_Distance_,_Time_,_Date_,_mi/hour_,_Km/hour_,_min/mi_,_min/km_,_edate_\n");	//column headers
 	for (i = 0; i < numOfEntries; i++) {
-		fprintf(f,"%f,%f,%s,%d\n",myData[i].distance,myData[i].timeInMinutes,
-			                      myData[i].date, myData[i].edate);
+		fprintf(f,"%f,%f,%s,%f,%f,%f,%f,%d\n",myData[i].distanceInMiles,myData[i].timeInMinutes,
+			                      myData[i].date, myData[i].edate,myData[i].mph, myData[i].kph,
+			                      myData[i].minutesPerMile, myData[i].minutesPerKilometer, 
+			                      myData[i].edate);
 	}
 }
 
@@ -243,10 +245,21 @@ int readDB(FILE *f) {
     		//set i equal return value of sscanf (which will be no. of vars filled)
     		rc = sscanf(line, "%s %s %s", &newDistance, &newTime, &newDate);
     		if (rc == 3) {
-    			myData[numOfEntries].distance = atof(newDistance);
+    			myData[numOfEntries].distanceInMiles = atof(newDistance);
     			myData[numOfEntries].timeInMinutes = atof(newTime);
     			strcpy(myData[numOfEntries].date, newDate);
     			structToEpochTime(numOfEntries);
+    			//derived entries
+    			
+    			myData[numOfEntries].mph = 
+    				miles_per_hour(myData[numOfEntries].distanceInMiles, myData[numOfEntries].timeInMinutes);
+    		   	myData[numOfEntries].kph = 
+    		   		kilometers_per_hour(myData[numOfEntries].distanceInMiles, myData[numOfEntries].timeInMinutes);
+    		   	myData[numOfEntries].minutesPerMile = 
+    		   		min_per_mile(myData[numOfEntries].distanceInMiles, myData[numOfEntries].timeInMinutes);	
+    		   	myData[numOfEntries].minutesPerKilometer = 
+    		   		min_per_kilometer(myData[numOfEntries].distanceInMiles, myData[numOfEntries].timeInMinutes);
+    		   	
     		   numOfEntries++;
     		}   
     	}	
